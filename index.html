@@ -1,0 +1,909 @@
+<!doctype html>
+<html lang="mn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Эргэх ба үл эргэх өөрчлөлт</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Pangolin&family=Golos+Text:wght@500;600;700;800&display=swap">
+<style>
+:root{
+  --paper:#fffdf6; --grid:#e4ecf6; --ink:#2b2a3a; --muted:#646378; --line:#ece6d6; --card:#ffffff;
+  --rev:#10a39b; --rev-d:#0b7c76; --rev-soft:#daf4f1;
+  --irr:#ff6a2b; --irr-d:#d24c12; --irr-soft:#ffe8da;
+  --pen:#4a5bd6; --pen-d:#3343b0; --pen-soft:#e6e9ff;
+  --hl:#fff176; --wood:#b97a46; --wood-d:#8a5a33;
+  --green:#22a565; --green-d:#178048; --green-soft:#ddf6e8; --red:#e5484d;
+  --shadow:0 8px 22px rgba(70,60,30,.13);
+  --hfont:"Pangolin","Golos Text",system-ui,sans-serif;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{color:var(--ink);font-family:"Golos Text","Segoe UI",system-ui,sans-serif;font-size:21px;line-height:1.45;overflow:hidden;
+  background-color:var(--paper);background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);background-size:26px 26px}
+button{font:inherit;cursor:pointer}
+.margin{position:fixed;top:0;bottom:0;left:46px;width:2px;background:#ffb3b3;z-index:0;pointer-events:none}
+.doodles{position:fixed;inset:0;z-index:0;pointer-events:none;opacity:.5;
+  background:
+   url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120' viewBox='0 0 120 120'%3E%3Cg fill='none' stroke='%2310a39b' stroke-width='4' stroke-linecap='round'%3E%3Cpath d='M90 60a30 30 0 1 1-9-21'/%3E%3Cpath d='M82 24l-1 16 16-1'/%3E%3C/g%3E%3C/svg%3E") right 40px top 120px/90px no-repeat,
+   url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='60' viewBox='0 0 140 60'%3E%3Cg fill='none' stroke='%23ff6a2b' stroke-width='4' stroke-linecap='round'%3E%3Cpath d='M10 30h110'/%3E%3Cpath d='M105 15l18 15-18 15'/%3E%3C/g%3E%3C/svg%3E") left 70px bottom 120px/120px no-repeat}
+
+/* ===== Header: notebook with rings ===== */
+.top{position:fixed;inset:0 0 auto 0;height:62px;display:flex;align-items:center;gap:14px;padding:0 18px 0 64px;z-index:20;background:#fff;box-shadow:0 2px 0 #eadfc8}
+.top::after{content:"";position:absolute;left:0;right:0;bottom:-14px;height:20px;pointer-events:none;
+  background:radial-gradient(circle at 14px 6px,#fff 0 5px,#8f97a8 5.5px 8px,transparent 8.5px) repeat-x;background-size:34px 20px}
+.brand{font-family:var(--hfont);font-size:22px;display:flex;align-items:center;gap:8px;white-space:nowrap;color:var(--pen-d)}
+.brand .ic{display:inline-flex;gap:2px}
+.brand .ic b{display:inline-flex;width:30px;height:30px;border-radius:50%;align-items:center;justify-content:center;color:#fff;font-size:18px}
+.brand .ic b:first-child{background:var(--rev)}.brand .ic b:last-child{background:var(--irr)}
+.stage{flex:1;min-width:0}
+.stage-name{display:inline-block;max-width:100%;font-weight:700;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:3px 14px;background:rgba(255,214,102,.55);transform:rotate(-1deg)}
+.timer{display:flex;align-items:center;gap:8px;font-weight:800;font-variant-numeric:tabular-nums;font-size:23px;padding:3px 14px;border-radius:12px;background:var(--rev-soft);color:var(--rev-d)}
+.timer.warn{background:#fff3cf;color:#a87800}
+.timer.over{background:var(--irr-soft);color:var(--irr-d)}
+.tbtn{border:2px solid var(--line);background:#fff;border-radius:12px;padding:5px 12px;font-weight:700;font-size:16px;color:var(--ink)}
+.tbtn:hover{border-color:var(--pen);color:var(--pen)}
+.progress{position:fixed;top:62px;left:0;height:4px;background:linear-gradient(90deg,var(--rev),var(--irr));z-index:21;transition:width .4s}
+
+/* ===== Slides ===== */
+.deck{position:absolute;inset:80px 0 76px 0;z-index:1}
+.slide{position:absolute;inset:0;overflow:auto;padding:12px clamp(16px,4vw,56px) 24px clamp(60px,5vw,70px);opacity:0;visibility:hidden;transform:rotate(-.6deg) translateY(16px);transition:opacity .4s,transform .4s,visibility .4s}
+.slide.active{opacity:1;visibility:visible;transform:none}
+.inner{max-width:1280px;margin:0 auto}
+h1{font-family:var(--hfont);font-weight:400;font-size:clamp(40px,5.6vw,74px);line-height:1.1;margin:0 0 14px}
+h2{font-family:var(--hfont);font-weight:400;font-size:clamp(30px,3.3vw,44px);margin:0 0 6px;display:inline-flex;align-items:center;gap:12px;background:linear-gradient(transparent 60%,rgba(255,241,118,.85) 60%);padding:0 6px}
+h3{font-size:23px;margin:0 0 8px;font-weight:800}
+.sub{color:var(--muted);margin:0 0 14px;font-size:20px}
+.card{background:var(--card);border-radius:18px;box-shadow:var(--shadow);padding:18px 22px;position:relative;border:2px solid #f1ead8}
+.card.tape::before{content:"";position:absolute;top:-12px;left:50%;transform:translateX(-50%) rotate(-3deg);width:110px;height:24px;background:rgba(255,214,102,.6);border-left:2px dashed rgba(255,255,255,.7);border-right:2px dashed rgba(255,255,255,.7)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:22px}
+.row{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
+.btn{border:none;border-radius:14px;padding:10px 18px;font-weight:700;background:var(--pen);color:#fff;box-shadow:0 4px 0 var(--pen-d);transition:transform .1s,filter .15s}
+.btn:hover{filter:brightness(1.07)}
+.btn:active{transform:translateY(2px);box-shadow:0 2px 0 var(--pen-d)}
+.btn[disabled]{opacity:.4;cursor:default;filter:none}
+.btn.ghost{background:#fff;color:var(--ink);border:2px solid var(--line);box-shadow:none}
+.btn.ghost.on{background:var(--pen-soft);border-color:var(--pen);color:var(--pen-d)}
+.btn.rev{background:var(--rev);box-shadow:0 4px 0 var(--rev-d)}
+.btn.irr{background:var(--irr);box-shadow:0 4px 0 var(--irr-d)}
+.btn.green{background:var(--green);box-shadow:0 4px 0 var(--green-d)}
+.btn.yel{background:#ffd23f;color:#3b2a00;box-shadow:0 4px 0 #d6a800}
+.muted{color:var(--muted)}
+.note{background:#fffbe0;border-left:6px solid #ffd23f;border-radius:10px;padding:12px 16px;margin-top:14px}
+.def{border-radius:12px;padding:10px 14px;margin:8px 0}
+.def.r{background:var(--rev-soft)}.def.i{background:var(--irr-soft)}.def.p{background:var(--pen-soft)}
+.r-c{color:var(--rev-d)}.i-c{color:var(--irr-d)}.p-c{color:var(--pen-d)}
+.feedback{font-size:21px;font-weight:700;min-height:32px;margin-top:10px}
+.feedback.ok{color:var(--green-d)}.feedback.no{color:var(--red)}
+.score{font-size:22px;font-weight:800;color:var(--green-d)}
+
+/* ===== Nav: lab bench ===== */
+.nav{position:fixed;inset:auto 0 0 0;height:72px;display:flex;align-items:center;justify-content:space-between;padding:0 18px;z-index:20;gap:10px;
+  background:repeating-linear-gradient(90deg,rgba(0,0,0,.05) 0 2px,transparent 2px 46px),linear-gradient(180deg,#cf935d,var(--wood) 40%,var(--wood-d));border-top:5px solid #7a4b26}
+.nav .btn{background:#fffdf6;color:var(--wood-d);box-shadow:0 4px 0 rgba(0,0,0,.25)}
+.dots{display:flex;gap:9px;flex-wrap:wrap;justify-content:center}
+.dot{width:34px;height:34px;border-radius:50%;border:2px dashed #fff6e3;background:rgba(255,255,255,.15);color:#fff;font-weight:800;font-size:14px;transition:.2s}
+.dot.on{background:#fffdf6;color:var(--pen-d);border-style:solid;transform:scale(1.15)}
+.dot.done{background:var(--rev);border-style:solid}
+
+.tnotes{position:fixed;right:18px;bottom:86px;width:min(420px,calc(100vw - 36px));background:#fffbe8;border:2px solid #ffd23f;border-radius:16px;padding:14px 18px;font-size:17px;box-shadow:var(--shadow);z-index:25;display:none}
+.tnotes.show{display:block}
+.tnotes h4{margin:0 0 6px;font-size:18px}
+.tnotes ul{margin:0;padding-left:20px}
+
+/* ===== Intro ===== */
+.intro{min-height:calc(100vh - 200px);display:flex;align-items:center;justify-content:center}
+.cover{background:#fff;border-radius:20px;box-shadow:0 18px 40px rgba(70,60,30,.18);padding:34px clamp(24px,5vw,70px);text-align:center;position:relative;border:3px solid #efe3c4;max-width:900px;width:100%}
+.cover::before,.cover::after{content:"";position:absolute;top:-14px;width:120px;height:28px;background:rgba(255,214,102,.65)}
+.cover::before{left:30px;transform:rotate(-6deg)}.cover::after{right:30px;transform:rotate(5deg)}
+.cover .school{font-family:var(--hfont);font-size:clamp(26px,2.8vw,36px);color:var(--pen-d)}
+.cover .subject{font-family:var(--hfont);font-size:clamp(56px,7.5vw,100px);line-height:1.05;margin:6px 0 12px;color:var(--ink)}
+.cover .topic{display:inline-flex;align-items:center;gap:12px;font-family:var(--hfont);font-size:clamp(28px,3.4vw,46px);padding:8px 26px;border-radius:14px;background:linear-gradient(90deg,var(--rev-soft),#fff,var(--irr-soft));border:3px dashed #d9cfb5}
+.cover .teacher{margin-top:18px;font-size:clamp(22px,2.4vw,30px);font-weight:700}
+.cover .icons{display:flex;justify-content:center;gap:26px;font-size:clamp(40px,5vw,62px);margin-bottom:6px}
+.cover .icons span{animation:wob 3s ease-in-out infinite}
+.cover .icons span:nth-child(2){animation-delay:.5s}.cover .icons span:nth-child(3){animation-delay:1s}.cover .icons span:nth-child(4){animation-delay:1.5s}
+@keyframes wob{50%{transform:translateY(-8px) rotate(-6deg)}}
+
+/* ===== Video ===== */
+.vid{background:#fff;border-radius:18px;overflow:hidden;box-shadow:var(--shadow);border:2px solid #f1ead8}
+.vid canvas{display:block;width:100%;height:auto;max-height:calc(100vh - 330px);object-fit:contain;background:#fffdf6;cursor:pointer}
+.vbar{display:flex;align-items:center;gap:8px;padding:8px 12px;background:#faf5e8;flex-wrap:wrap}
+.vbar button{border:none;background:#fff;color:var(--ink);border-radius:10px;padding:6px 12px;font-weight:700;font-size:15px;box-shadow:0 1px 0 #e3d9c0}
+.vprog{flex:1;min-width:120px;height:10px;border-radius:99px;background:#ece3cd;cursor:pointer;position:relative;overflow:hidden}
+.vprog i{position:absolute;inset:0 auto 0 0;width:0;background:linear-gradient(90deg,var(--rev),var(--irr));border-radius:99px}
+.vtime{color:var(--muted);font-size:14px;font-weight:700;font-variant-numeric:tabular-nums}
+.riddle{font-size:24px;font-weight:600;line-height:1.6}
+.reveal{margin-top:10px;font-family:var(--hfont);font-size:36px;color:var(--irr-d);opacity:0;transform:scale(.6);transition:.4s}
+.reveal.show{opacity:1;transform:none}
+
+/* ===== KWL ===== */
+table{border-collapse:separate;border-spacing:0;width:100%}
+.kwl{border-radius:18px;overflow:hidden;box-shadow:var(--shadow)}
+.kwl th{font-size:22px;padding:14px;color:#fff;text-align:left;font-family:var(--hfont);font-weight:400}
+.kwl th:nth-child(1){background:var(--rev)}.kwl th:nth-child(2){background:var(--pen)}.kwl th:nth-child(3){background:var(--irr)}
+.kwl td{vertical-align:top;background:#fff;border-right:2px solid var(--line);padding:0;width:33.3%}
+.kwl td:last-child{border-right:none}
+.kwl.two td{width:50%}
+.kwl td div{min-height:260px;padding:14px;outline:none;font-size:20px;white-space:pre-wrap;background-image:linear-gradient(transparent 31px,#eef2f8 31px);background-size:100% 32px;line-height:32px}
+.kwl td div:empty::before{content:attr(data-ph);color:#a7a6b8}
+.kwl td div.ro{color:#646378;font-size:18px;min-height:0;height:100%;background-color:#fbf9f2}
+.kwl td div.ro:empty::before{content:"(хоосон)"}
+.kwl.end td:nth-child(3) div{min-height:300px;font-size:22px;background-color:#fff7f1}
+
+.goals{list-style:none;padding:0;margin:0}
+.goals li{margin:8px 0;padding:8px 12px 8px 40px;position:relative}
+.goals li::before{content:"☐";position:absolute;left:8px;top:6px;font-size:24px;color:var(--pen)}
+
+/* ===== Canvas labs ===== */
+.labbox{background:#fff;border-radius:18px;box-shadow:var(--shadow);border:2px solid #f1ead8;overflow:hidden}
+.labbox canvas{display:block;width:100%;height:auto;max-height:calc(100vh - 300px);object-fit:contain;background:#fffdf6;touch-action:none}
+.labbox .ctrl{display:flex;gap:8px;flex-wrap:wrap;padding:10px 12px;background:#faf5e8;justify-content:center}
+.labbox .ctrl .btn{padding:8px 13px;font-size:16px}
+.status{font-family:var(--hfont);font-size:26px;margin:4px 0 8px;min-height:38px}
+.kid{display:flex;gap:12px;align-items:flex-start;padding:10px 12px;border-radius:14px;border:3px solid transparent;background:#faf7ee;cursor:pointer;margin-bottom:8px;transition:.15s}
+.kid:hover{border-color:#e3d9c0}
+.kid.on{border-color:var(--pen);background:var(--pen-soft)}
+.kid .av{font-size:40px;line-height:1}
+.kid b{display:block}
+.kid span{font-size:17px;color:var(--muted)}
+
+/* ===== Rewind game ===== */
+.rw-stage{display:flex;align-items:center;justify-content:center;gap:clamp(14px,3vw,40px);padding:16px;min-height:200px}
+.rw-stage .em{font-size:clamp(70px,9vw,120px);line-height:1;transition:transform .5s,filter .5s}
+.rw-arrow{font-size:clamp(46px,5vw,70px);position:relative}
+.rw-arrow .stamp{position:absolute;inset:-10px;display:flex;align-items:center;justify-content:center;font-size:1.3em;opacity:0;transform:scale(2);transition:.35s}
+.rw-arrow .stamp.show{opacity:1;transform:none}
+.rw-title{text-align:center;font-family:var(--hfont);font-size:34px}
+.rw-btns{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:12px}
+.rw-btns .btn{font-size:22px;padding:14px}
+.rewind .em.after{animation:rewindOut .9s forwards}
+@keyframes rewindOut{0%{transform:none}40%{transform:translateX(-40px) scale(.8);filter:blur(2px)}100%{transform:translateX(0) scale(1);filter:none}}
+.shake{animation:shake .45s}
+@keyframes shake{25%{transform:translateX(-8px)}75%{transform:translateX(8px)}}
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.col{border-radius:16px;padding:10px 12px;min-height:110px}
+.col.r{background:var(--rev-soft);border:2px dashed var(--rev)}.col.i{background:var(--irr-soft);border:2px dashed var(--irr)}
+.col h4{margin:0 0 6px;font-family:var(--hfont);font-weight:400;font-size:22px}
+.col .it{display:inline-block;background:#fff;border-radius:99px;padding:3px 10px;margin:3px;font-size:16px;font-weight:600}
+
+/* ===== Fire triangle & safety ===== */
+.tri svg{width:100%;height:auto;display:block}
+.tri .side{cursor:pointer}
+.tri .side:hover text{text-decoration:underline}
+.safety{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.sc{background:#fff;border-radius:16px;box-shadow:var(--shadow);padding:14px;display:flex;flex-direction:column;gap:8px;border:3px solid transparent;transition:.2s}
+.sc .e{font-size:44px;line-height:1}
+.sc .t{font-weight:700;font-size:19px;flex:1}
+.sc .b{display:flex;gap:8px}
+.sc .b .btn{flex:1;padding:8px;font-size:18px}
+.sc.ok{border-color:var(--green);background:#f1fcf6}.sc.no{border-color:var(--red);background:#fff3f3}
+.sc .ex{font-size:16px;font-weight:600;min-height:0}
+
+/* ===== Quiz ===== */
+.quiz-q{font-family:var(--hfont);font-size:34px;margin:8px 0 16px}
+.quiz-opts{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.qopt{display:flex;align-items:center;gap:14px;text-align:left;padding:16px 20px;border-radius:16px;border:3px solid var(--line);background:#fff;font-weight:700;font-size:22px;transition:.15s;box-shadow:var(--shadow)}
+.qopt:hover{border-color:var(--pen);transform:translateY(-2px)}
+.qopt .k{width:44px;height:44px;flex:none;border-radius:12px;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800}
+.qopt:nth-child(1) .k{background:var(--rev)}.qopt:nth-child(2) .k{background:var(--pen)}
+.qopt:nth-child(3) .k{background:var(--irr)}.qopt:nth-child(4) .k{background:#a05ad6}
+.qopt.right{background:#d8f7e4;border-color:var(--green)}
+.qopt.wrong{background:#ffe0e0;border-color:var(--red)}
+.qopt[disabled]{cursor:default;transform:none}
+.qbar{display:flex;gap:6px;margin-bottom:10px}
+.qbar i{flex:1;height:10px;border-radius:99px;background:#ece3cd}
+.qbar i.ok{background:var(--green)}.qbar i.no{background:var(--red)}.qbar i.cur{background:var(--pen)}
+.result{text-align:center;padding:30px}
+.result .bigstars{font-size:64px;letter-spacing:6px}
+.lights{display:flex;gap:14px;flex-wrap:wrap}
+.light{flex:1;min-width:150px;border:3px solid var(--line);background:#fff;border-radius:18px;padding:14px;text-align:center;font-weight:700}
+.light .e{font-size:50px}
+.light.on{border-color:var(--pen);background:var(--pen-soft);transform:scale(1.03)}
+.light .n{font-size:28px;color:var(--pen-d)}
+#confetti{position:fixed;inset:0;pointer-events:none;z-index:50}
+
+@media (max-height:900px){
+  body{font-size:18px}
+  h2{font-size:32px}
+  .sub{font-size:17px;margin-bottom:10px}
+  .card{padding:14px 18px}
+  .riddle{font-size:21px;line-height:1.45}
+  .note{padding:8px 12px;margin-top:10px}
+  .kwl td div{min-height:210px}
+  .status{font-size:22px;min-height:32px}
+  .def{padding:7px 12px;margin:5px 0;font-size:16px}
+  .kid{padding:7px 10px;margin-bottom:6px}.kid .av{font-size:32px}.kid span{font-size:15px}
+  .rw-stage{min-height:150px;padding:8px}
+  .rw-title{font-size:28px}
+  .rw-btns .btn{font-size:19px;padding:10px}
+  .col{min-height:80px}
+  .sc{padding:10px}.sc .e{font-size:34px}.sc .t{font-size:17px}
+  .quiz-q{font-size:28px;margin:4px 0 10px}
+  .qopt{padding:12px 16px;font-size:20px}
+  .light .e{font-size:38px}.light{padding:10px}
+  .goals li{margin:4px 0}
+}
+@media (max-width:900px){
+  body{font-size:18px}
+  .grid2,.quiz-opts,.safety,.cols{grid-template-columns:1fr !important}
+  .brand .t{display:none}
+  .dots{display:none}
+}
+</style>
+</head>
+<body>
+<div class="margin"></div><div class="doodles"></div>
+
+<header class="top">
+  <div class="brand"><span class="ic"><b>↺</b><b>→</b></span><span class="t">Хүн байгаль · 5-р анги</span></div>
+  <div class="stage"><span class="stage-name" id="stageName"></span></div>
+  <div class="timer" id="timer" title="Хичээлийн үлдсэн хугацаа (2 удаа дарвал 40:00 болно)">⏱ <span id="tval">40:00</span></div>
+  <button class="tbtn" id="tPlay">▶ Эхлэх</button>
+  <button class="tbtn" id="notesBtn" title="Багшийн тэмдэглэл (N)">📝 Багшид</button>
+  <button class="tbtn" id="fsBtn" title="Бүтэн дэлгэц (F)">⛶</button>
+</header>
+<div class="progress" id="progress"></div>
+
+<main class="deck">
+
+<!-- 0. Танилцуулга -->
+<section class="slide" data-name="Танилцуулга" data-min="1"
+  data-notes="Хүүхдүүдтэй мэндэлж, өөрийгөө танилцуулна.|Дээд талын ▶ Эхлэх товчоор 40 минутын цагийг эхлүүлнэ.">
+  <div class="inner intro">
+    <div class="cover">
+      <div class="icons"><span>🧊</span><span>🧲</span><span>🕯️</span><span>🔬</span></div>
+      <div class="school">🏫 1-р сургууль</div>
+      <div class="subject">Хүн байгаль</div>
+      <div class="topic"><span class="r-c">↺</span> Эргэх ба үл эргэх өөрчлөлт <span class="i-c">→</span></div>
+      <div class="teacher">👩‍🏫 Багш: В. Гэрэлтуяа</div>
+    </div>
+  </div>
+</section>
+
+<!-- 1. Оньсого ба бичлэг -->
+<section class="slide" data-name="Оньсого: Буцааж болох уу?" data-min="3"
+  data-notes="Оньсогыг уншиж таалгасны дараа “Хариу” товчийг дарна.|“Буцааж болох уу?” бичлэгийг (≈43 сек) үзүүлнэ.|Асуулт: Аль нь анхны байдалдаа буцаж чадсан бэ? Аль нь чадаагүй вэ?">
+  <div class="inner">
+    <h2>🤔 Буцааж болох уу?</h2>
+    <p class="sub">Оньсогыг таагаад, бичлэгээс аль өөрчлөлт буцаж болохыг ажиглаарай.</p>
+    <div class="grid2" style="grid-template-columns:.62fr 1.38fr">
+      <div class="card tape">
+        <h3>🧩 Оньсого</h3>
+        <p class="riddle">Бие нь хайлж богиносно,<br>Толгой нь гэрэлтэж асна.<br>Харанхуйг гийгүүлдэг —<br><span class="muted" style="font-size:19px">Энэ юу вэ?</span></p>
+        <button class="btn" onclick="this.nextElementSibling.classList.add('show');confetti(60)">Хариу 👀</button>
+        <div class="reveal">🕯️ Лаа!</div>
+      </div>
+      <div class="vid" id="vid1"></div>
+    </div>
+  </div>
+</section>
+
+<!-- 2. KWL -->
+<section class="slide" data-name="Бид юу мэдэх вэ?" data-min="2"
+  data-notes="Сурагчдын хэлсэн санааг хоёр баганад шууд бичнэ.|“Шинээр мэдэж авлаа” баганыг хичээлийн төгсгөлд бөглөнө.">
+  <div class="inner">
+    <h2>🧠 Өөрчлөлтийн талаар бид юу мэдэх вэ?</h2>
+    <p class="sub">Нүдэн дээр дарж санаагаа бичээрэй. Хичээлийн төгсгөлд юу шинээр сурснаа бичнэ шүү! 🌟</p>
+    <table class="kwl two">
+      <tr><th>✅ Би мэднэ</th><th>❓ Мэдэхийг хүсэж байна</th></tr>
+      <tr>
+        <td><div contenteditable="true" data-k="ch4_kwl1" data-ph="Жишээ нь: Мөс хайлж ус болдог…"></div></td>
+        <td><div contenteditable="true" data-k="ch4_kwl2" data-ph="Жишээ нь: Шатсан цаасыг буцааж болох уу?"></div></td>
+      </tr>
+    </table>
+  </div>
+</section>
+
+<!-- 3. Сэдэв -->
+<section class="slide" data-name="Эргэх ба үл эргэх өөрчлөлт" data-min="1"
+  data-notes="Сэдвээ зарлаж, зорилгыг хамт уншина. 4-р ангид үзсэн “усанд уусдаг, уусдаггүй” бодисыг сануулна.">
+  <div class="inner grid2" style="align-items:center;min-height:calc(100vh - 230px)">
+    <div>
+      <h1><span class="r-c">↺ Эргэх</span> ба<br><span class="i-c">үл эргэх →</span><br>өөрчлөлт</h1>
+      <div class="def r" style="font-size:20px"><b class="r-c">Эргэх өөрчлөлт</b> — дахин анхны байдалдаа буцаж болно. 🧊 ⇄ 💧</div>
+      <div class="def i" style="font-size:20px"><b class="i-c">Үл эргэх өөрчлөлт</b> — анхны байдалдаа буцаж чадахгүй. 📄 → 🔥 → ⚫</div>
+    </div>
+    <div class="card tape">
+      <h3>🎯 Өнөөдөр бид:</h3>
+      <ul class="goals">
+        <li>Элсийг уснаас <b>шүүх</b> аргаар ялгана</li>
+        <li>Төмрийн үртсийг <b>соронзоор</b> ялгана</li>
+        <li>Эргэх, үл эргэх өөрчлөлтийг ялгана</li>
+        <li><b>Шатах</b> үзэгдлийг судалж, галаас сэргийлнэ</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- 4. Шүүх -->
+<section class="slide" data-name="Элсийг уснаас яаж ялгах вэ?" data-min="6"
+  data-notes="Сурах бичгийн х.37, 40-ийн шүүх арга. Товчнуудыг дарааллаар нь дарна: цаас нугалах → юүлүүрт тавих → савхаар асгах.|Шилэн савхыг 45° өнцгөөр барьдагийг онцлоно.|Асуулт: Модны үртэс, давс хоёрын алийг нь шүүж ялгаж болох вэ? (давс уусдаг тул болохгүй).">
+  <div class="inner">
+    <h2>🏖️ Элсийг уснаас яаж ялгах вэ?</h2>
+    <div class="grid2" style="grid-template-columns:1.25fr .75fr;align-items:start">
+      <div class="labbox">
+        <canvas id="filt" width="900" height="600"></canvas>
+        <div class="ctrl">
+          <button class="btn" id="f1">1. Цаас нугалах</button>
+          <button class="btn" id="f2" disabled>2. Юүлүүрт тавих</button>
+          <button class="btn rev" id="f3" disabled>3. Савхаар асгах</button>
+          <button class="btn ghost" id="f0">↺ Дахин</button>
+        </div>
+      </div>
+      <div>
+        <div class="card">
+          <div class="status" id="fStatus">🥤 Элс, усны холимог</div>
+          <div class="muted" id="fText" style="font-size:18px">Ану: “Би элсийг уснаас ялгахын тулд <b>шүүнэ</b>. Надад юу хэрэгтэй вэ?”</div>
+        </div>
+        <div class="card" style="margin-top:12px">
+          <h3>🤔 Аль нь шүүгдэх вэ?</h3>
+          <div class="row">
+            <button class="btn ghost" data-fq="wood">🪵 Модны үртэс</button>
+            <button class="btn ghost" data-fq="salt">🧂 Хоолны давс</button>
+          </div>
+          <div class="feedback" id="fqFb"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 5. Соронз -->
+<section class="slide" data-name="Төмрийн үртсийг яаж ялгах вэ?" data-min="5"
+  data-notes="Сурах бичгийн х.38: гурван хүүхдийн төлөвлөгөө. Хүүхэд сонгоод соронзыг хулганаар чирж туршина.|Ану: соронзоо шилний гадна талаар гүйлгээд үртсийг цуглуулж, дараа нь “Усыг асгах”.|Болор: соронзоо усанд хийгээд үртсийг наалдуулж, тавган дээр аваачна.|Асуулт: Аль арга хамгийн оновчтой вэ? Үртэс, ус хоёул хэвээрээ үлдсэн үү? → эргэх өөрчлөлт.">
+  <div class="inner">
+    <h2>🧲 Төмрийн үртсийг уснаас яаж ялгах вэ?</h2>
+    <div class="grid2" style="grid-template-columns:1.25fr .75fr;align-items:start">
+      <div class="labbox">
+        <canvas id="mag" width="900" height="600"></canvas>
+        <div class="ctrl">
+          <button class="btn rev" id="mPour">💧 Усыг асгах</button>
+          <button class="btn ghost" id="mReset">↺ Дахин</button>
+        </div>
+      </div>
+      <div>
+        <div class="kid" data-m="filter"><div class="av">🧒</div><div><b>Тэмүжин</b><span>“Би төмрийн үртсийг уснаас <b>шүүнэ</b>.”</span></div></div>
+        <div class="kid on" data-m="out"><div class="av">👧</div><div><b>Ану</b><span>“Шилэн савны <b>гадна талаас</b> соронздоно.”</span></div></div>
+        <div class="kid" data-m="in"><div class="av">👦</div><div><b>Болор</b><span>“Соронзоо <b>сав руу хийж</b> соронздоно.”</span></div></div>
+        <div class="card" style="padding:12px 16px">
+          <div class="status" id="mStatus" style="font-size:22px">👆 Соронзыг чирээд үзээрэй!</div>
+          <div class="muted" id="mText" style="font-size:17px"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 6. Буцааж үзье -->
+<section class="slide" data-name="Буцааж болох уу? ⏪" data-min="5"
+  data-notes="Өөрчлөлт бүрийг хараад, хүүхдүүдээр “буцааж болох уу?” гэж таамаглуулна.|Эргэх бол ⏪ товч дарахад буцаж харагдана, үл эргэх бол ❌ тамга гарна.|Доорх хоёр баганад хариулсан зүйлс цуглана.">
+  <div class="inner">
+    <h2>⏪ Буцааж болох уу?</h2>
+    <div class="grid2" style="grid-template-columns:1.15fr .85fr;align-items:start">
+      <div class="card">
+        <div class="rw-title" id="rwTitle"></div>
+        <div class="rw-stage" id="rwStage">
+          <span class="em before" id="rwBefore"></span>
+          <span class="rw-arrow">➡️<span class="stamp" id="rwStamp">❌</span></span>
+          <span class="em after" id="rwAfter"></span>
+        </div>
+        <div class="rw-btns">
+          <button class="btn rev" data-rw="r">↺ Буцааж болно<br><small>(эргэх)</small></button>
+          <button class="btn irr" data-rw="i">→ Буцахгүй<br><small>(үл эргэх)</small></button>
+        </div>
+        <div class="feedback" id="rwFb"></div>
+        <div class="row" style="justify-content:space-between">
+          <span class="score">⭐ <span id="rwScore">0</span> / <span id="rwTot">0</span></span>
+          <button class="btn yel" id="rwNext">Дараах ▶</button>
+        </div>
+      </div>
+      <div class="cols">
+        <div class="col r"><h4 class="r-c">↺ Эргэх</h4><div id="colR"></div></div>
+        <div class="col i"><h4 class="i-c">→ Үл эргэх</h4><div id="colI"></div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 7. Шатах -->
+<section class="slide" data-name="Шатах үзэгдлийг судлах" data-min="6"
+  data-notes="Сурах бичгийн х.39-ийн туршилт. Боломжтой бол багш жинхэнэ лаа, шилээр үзүүлнэ (аюулгүй байдлыг сахина!).|“Шилээр таглах” → хүчилтөрөгч багасаж лаа унтарна. Шилний ханан дээр усан дусал, хөө үүснэ.|Галын гурвалжны тал бүр дээр дарж: аль нэгийг нь авбал гал унтарна гэдгийг тайлбарлана.">
+  <div class="inner">
+    <h2>🕯️ Шатах үзэгдлийг судлах</h2>
+    <div class="grid2" style="grid-template-columns:1.15fr .85fr;align-items:start">
+      <div class="labbox">
+        <canvas id="cand" width="900" height="600"></canvas>
+        <div class="ctrl">
+          <button class="btn" id="cCover">🫙 Шилээр таглах</button>
+          <button class="btn ghost" id="cLift">⬆️ Шилийг авах</button>
+          <button class="btn irr" id="cLight">🔥 Дахин асаах</button>
+        </div>
+      </div>
+      <div>
+        <div class="card tri">
+          <h3>🔺 Гал шатахад юу хэрэгтэй вэ?</h3>
+          <svg viewBox="0 0 400 300">
+            <polygon points="200,30 370,270 30,270" fill="#fff4ea" stroke="#ff6a2b" stroke-width="5" stroke-linejoin="round"/>
+            <text x="200" y="210" text-anchor="middle" font-size="70">🔥</text>
+            <g class="side" data-t="fuel"><rect x="20" y="110" width="150" height="46" rx="12" fill="#ffe8da"/><text x="95" y="141" text-anchor="middle" font-size="21" font-weight="800" fill="#d24c12">🕯️ Түлш</text></g>
+            <g class="side" data-t="oxy"><rect x="230" y="110" width="160" height="46" rx="12" fill="#daf4f1"/><text x="310" y="141" text-anchor="middle" font-size="21" font-weight="800" fill="#0b7c76">💨 Хүчилтөрөгч</text></g>
+            <g class="side" data-t="heat"><rect x="125" y="250" width="150" height="46" rx="12" fill="#fff1c2"/><text x="200" y="281" text-anchor="middle" font-size="21" font-weight="800" fill="#a87800">🌡️ Дулаан</text></g>
+          </svg>
+          <div class="muted" id="triText" style="font-size:17px">Тал бүр дээр дарж үзээрэй.</div>
+        </div>
+        <div class="def i" style="margin-top:10px"><b class="i-c">Дүгнэлт:</b> Шаталтад <b>хүчилтөрөгч</b> зайлшгүй хэрэгтэй. Шатсан цаас, лаа анхны байдалдаа буцаж чадахгүй — <b class="i-c">үл эргэх өөрчлөлт</b>.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 8. Галаас сэргийлье -->
+<section class="slide" data-name="Галаас сэргийлье!" data-min="3"
+  data-notes="Шатах үзэгдлийн хор уршгийн талаар ярилцана.|Карт бүр дээр 👍 эсвэл 👎 дарна.|Гэрийн даалгавар: “Би чадна” сэдэвт эх зохиох (сурах бичгийн х.39).">
+  <div class="inner">
+    <h2>🚒 Галаас сэргийлье!</h2>
+    <p class="sub">Энэ үйлдэл зөв үү 👍, буруу юу 👎?</p>
+    <div class="safety" id="safety"></div>
+  </div>
+</section>
+
+<!-- 9. Тест -->
+<section class="slide" data-name="Шалгацгаая!" data-min="4"
+  data-notes="Асуулт бүрийг ангиараа уншаад, гараа өргөж хариулсны дараа сонголтыг дарна.">
+  <div class="inner" id="quiz"></div>
+</section>
+
+<!-- 10. Шинээр -->
+<section class="slide" data-name="Шинээр юу мэдэж авсан бэ?" data-min="2"
+  data-notes="Хичээлийн эхэнд бичсэн 2 баганыг ангиараа уншина.|Шинээр сурсан зүйлийг сүүлийн баганад бичнэ.">
+  <div class="inner">
+    <h2>🌟 Бид шинээр юу мэдэж авсан бэ?</h2>
+    <p class="sub">Эхэнд юу мэддэг, юу мэдэхийг хүсэж байснаа санацгаая. Одоо шинээр юу сурснаа <b class="i-c">сүүлийн баганад</b> бичээрэй.</p>
+    <table class="kwl end">
+      <tr><th>✅ Би мэднэ</th><th>❓ Мэдэхийг хүсэж байна</th><th>🌟 Шинээр мэдэж авлаа</th></tr>
+      <tr>
+        <td><div class="ro" data-mirror="ch4_kwl1"></div></td>
+        <td><div class="ro" data-mirror="ch4_kwl2"></div></td>
+        <td><div contenteditable="true" data-k="ch4_kwl3" data-ph="Жишээ нь: Элсийг шүүж ялгадаг…"></div></td>
+      </tr>
+    </table>
+  </div>
+</section>
+
+<!-- 11. Дүгнэлт -->
+<section class="slide" data-name="Бид юу сурсан бэ?" data-min="2"
+  data-notes="Гол санааг давтана.|Гэрлэн дохиогоор өөрийгөө үнэлнэ.|Гэрийн даалгаврыг өгнө.">
+  <div class="inner">
+    <h2>🎉 Бид өнөөдөр юу сурсан бэ?</h2>
+    <div class="grid2">
+      <div class="card tape">
+        <h3>📚 Гол санаа</h3>
+        <div class="def r"><b class="r-c">↺ Эргэх:</b> мөс хайлах, ус хөлдөх, элсийг шүүх, төмрийн үртсийг соронздох</div>
+        <div class="def i"><b class="i-c">→ Үл эргэх:</b> цаас, мод шатах, өндөг шарах, талх жигнэх</div>
+        <div class="def p">Шаталтад <b>хүчилтөрөгч</b> хэрэгтэй.</div>
+        <div class="note">🏠 <b>Гэрийн даалгавар:</b> Гал түймрээс урьдчилан сэргийлэхэд өөрийн оруулж чадах хувь нэмрээ бичиж, <b>“Би чадна”</b> сэдэвт эх зохиогоорой.</div>
+      </div>
+      <div class="card">
+        <h3>🚦 Өнөөдрийн хичээлийг би…</h3>
+        <div class="lights">
+          <button class="light" data-l="g"><div class="e">🟢</div>Сайн ойлгосон<div class="n">0</div></button>
+          <button class="light" data-l="y"><div class="e">🟡</div>Бага зэрэг ойлгосон<div class="n">0</div></button>
+          <button class="light" data-l="r"><div class="e">🔴</div>Тусламж хэрэгтэй<div class="n">0</div></button>
+        </div>
+        <p class="muted" style="font-size:17px">Сурагч бүр өөрийн өнгөн дээр нэг удаа дарна.</p>
+        <button class="btn ghost" id="lReset">↺ Тэглэх</button>
+        <p style="font-family:var(--hfont);font-size:30px;text-align:center;margin:14px 0 0;color:var(--pen-d)">Баярлалаа! Галаас болгоомжилъё 🧯</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<nav class="nav">
+  <button class="btn" id="prevBtn">◀ Өмнөх</button>
+  <div class="dots" id="dots"></div>
+  <button class="btn" id="nextBtn">Дараах ▶</button>
+</nav>
+<div class="tnotes" id="tnotes"><h4>📝 Багшид зориулсан зөвлөмж</h4><ul id="tnList"></ul></div>
+<canvas id="confetti"></canvas>
+
+<script>
+/* ---------- Helpers ---------- */
+const store={get(k){try{return localStorage.getItem(k)}catch(e){return null}},set(k,v){try{localStorage.setItem(k,v)}catch(e){}}};
+const $=id=>document.getElementById(id);
+const rnd=(a,b)=>a+Math.random()*(b-a);
+const shuffle=a=>[...a].sort(()=>Math.random()-.5);
+const clamp01=v=>Math.max(0,Math.min(1,v));
+const ease=k=>k<.5?2*k*k:1-Math.pow(-2*k+2,2)/2;
+const kwlMem={};const videos=[];
+
+/* ---------- Slides ---------- */
+const slides=[...document.querySelectorAll('.slide')];const dots=$('dots');let cur=0;
+slides.forEach((s,i)=>{const b=document.createElement('button');b.className='dot';b.textContent=i+1;b.title=s.dataset.name;b.onclick=()=>go(i);dots.appendChild(b)});
+function go(i){
+  cur=Math.max(0,Math.min(slides.length-1,i));
+  slides.forEach((s,j)=>s.classList.toggle('active',j===cur));
+  [...dots.children].forEach((d,j)=>{d.classList.toggle('on',j===cur);d.classList.toggle('done',j<cur)});
+  const s=slides[cur];
+  $('stageName').textContent=(cur+1)+'. '+s.dataset.name;
+  $('progress').style.width=((cur+1)/slides.length*100)+'%';
+  $('tnList').innerHTML='<li>⏱ Зөвлөмж хугацаа: ≈'+s.dataset.min+' мин</li>'+s.dataset.notes.split('|').map(t=>'<li>'+t+'</li>').join('');
+  $('prevBtn').disabled=cur===0;$('nextBtn').textContent=cur===slides.length-1?'🏁 Төгсгөл':'Дараах ▶';
+  s.querySelectorAll('[data-mirror]').forEach(m=>m.textContent=kwlMem[m.dataset.mirror]||'');
+  videos.forEach(v=>{if(!s.contains(v.el))v.pause()});
+}
+$('prevBtn').onclick=()=>go(cur-1);$('nextBtn').onclick=()=>go(cur+1);
+document.addEventListener('keydown',e=>{
+  if(e.target.isContentEditable||e.target.tagName==='INPUT')return;
+  if(e.key==='ArrowRight'||e.key==='PageDown')go(cur+1);
+  else if(e.key==='ArrowLeft'||e.key==='PageUp')go(cur-1);
+  else if(e.key==='f'||e.key==='F')toggleFS();
+  else if(e.key==='n'||e.key==='N')toggleNotes();
+});
+function toggleFS(){if(!document.fullscreenElement)document.documentElement.requestFullscreen?.();else document.exitFullscreen?.()}
+function toggleNotes(){$('tnotes').classList.toggle('show')}
+$('fsBtn').onclick=toggleFS;$('notesBtn').onclick=toggleNotes;
+const isActive=el=>slides[cur].contains(el);
+
+/* ---------- Timer ---------- */
+let remain=40*60,running=false,tick=null;
+function drawT(){const a=Math.abs(remain),m=Math.floor(a/60),s=a%60;$('tval').textContent=(remain<0?'+':'')+m+':'+String(s).padStart(2,'0');$('timer').className='timer'+(remain<0?' over':remain<=300?' warn':'')}
+$('tPlay').onclick=()=>{running=!running;$('tPlay').textContent=running?'⏸ Зогсоох':'▶ Үргэлжлүүлэх';if(running)tick=setInterval(()=>{remain--;drawT()},1000);else clearInterval(tick)};
+$('timer').ondblclick=()=>{remain=40*60;drawT()};drawT();
+
+/* ---------- KWL ---------- */
+document.querySelectorAll('[data-k]').forEach(el=>{const k=el.dataset.k;kwlMem[k]=store.get(k)||'';el.textContent=kwlMem[k];el.addEventListener('input',()=>{kwlMem[k]=el.innerText;store.set(k,kwlMem[k])})});
+
+/* ================= Drawing helpers ================= */
+const VW=1280,VH=720;
+function emoji(c,e,x,y,size){c.save();c.font=`${size}px "Segoe UI Emoji","Apple Color Emoji","Noto Color Emoji",sans-serif`;c.textAlign='center';c.textBaseline='middle';c.fillText(e,x,y);c.restore()}
+function txt(c,t,x,y,size,color,stroke='#fff',font='Golos Text'){c.save();c.font=`700 ${size}px "${font}", sans-serif`;c.textAlign='center';c.textBaseline='middle';c.lineWidth=size/5;c.strokeStyle=stroke;c.strokeText(t,x,y);c.fillStyle=color;c.fillText(t,x,y);c.restore()}
+function face(c,x,y,s){c.save();c.fillStyle='#2b2a3a';c.beginPath();c.arc(x-s*.28,y-s*.08,s*.08,0,7);c.arc(x+s*.28,y-s*.08,s*.08,0,7);c.fill();c.strokeStyle='#2b2a3a';c.lineWidth=s*.06;c.lineCap='round';c.beginPath();c.arc(x,y+s*.05,s*.22,.15*Math.PI,.85*Math.PI);c.stroke();c.restore()}
+function paperBg(c,W,H){c.fillStyle='#fffdf6';c.fillRect(0,0,W,H);c.strokeStyle='#e9eff7';c.lineWidth=1;for(let x=0;x<W;x+=32){c.beginPath();c.moveTo(x,0);c.lineTo(x,H);c.stroke()}for(let y=0;y<H;y+=32){c.beginPath();c.moveTo(0,y);c.lineTo(W,y);c.stroke()}}
+function flame(c,x,y,s,T){if(s<=0.02)return;c.save();const h=s*(70+Math.sin(T*18)*5),w=s*22;
+  let g=c.createRadialGradient(x,y-h*.3,2,x,y-h*.3,h);g.addColorStop(0,'rgba(255,200,80,.45)');g.addColorStop(1,'rgba(255,160,40,0)');c.fillStyle=g;c.beginPath();c.arc(x,y-h*.3,h,0,7);c.fill();
+  c.fillStyle='#ff8a1f';c.beginPath();c.moveTo(x,y-h);c.bezierCurveTo(x+w,y-h*.45,x+w,y,x,y);c.bezierCurveTo(x-w,y,x-w,y-h*.45,x,y-h);c.fill();
+  c.fillStyle='#ffe066';c.beginPath();c.moveTo(x,y-h*.6);c.bezierCurveTo(x+w*.5,y-h*.3,x+w*.5,y,x,y);c.bezierCurveTo(x-w*.5,y,x-w*.5,y-h*.3,x,y-h*.6);c.fill();c.restore()}
+function smoke(c,x,y,T,a){c.save();for(let i=0;i<6;i++){const p=(T*.6+i/6)%1;c.globalAlpha=a*(1-p)*.6;c.fillStyle='#9aa0aa';c.beginPath();c.arc(x+Math.sin(T*3+i)*10*p,y-p*120,6+p*16,0,7);c.fill()}c.restore()}
+function iceCube(c,x,y,s){c.save();const g=c.createLinearGradient(x-s/2,y-s/2,x+s/2,y+s/2);g.addColorStop(0,'#e9fbff');g.addColorStop(1,'#7fd7ef');c.fillStyle=g;c.strokeStyle='#4cc0de';c.lineWidth=Math.max(2,s*.04);c.beginPath();c.roundRect(x-s/2,y-s/2,s,s,s*.18);c.fill();c.stroke();if(s>60)face(c,x,y+s*.05,s*.8);c.restore()}
+
+/* ================= Video engine ================= */
+function vCaption(c,text,a=1){if(!text)return;c.save();c.globalAlpha=a;c.font='700 38px "Golos Text", sans-serif';
+  const w=c.measureText(text).width+70,h=74,x=(VW-w)/2,y=VH-h-22;
+  c.fillStyle='rgba(255,241,118,.95)';c.beginPath();c.roundRect(x,y,w,h,14);c.fill();c.lineWidth=3;c.strokeStyle='#2b2a3a';c.stroke();
+  c.fillStyle='#2b2a3a';c.textAlign='center';c.textBaseline='middle';c.fillText(text,VW/2,y+h/2+2);c.restore()}
+function makeVideo(el,scenes,fileName){
+  el.innerHTML=`<canvas width="${VW}" height="${VH}"></canvas><div class="vbar"><button class="pp">▶ Тоглуулах</button><button class="rs" title="Эхнээс нь">⏮</button><div class="vprog"><i></i></div><span class="vtime">0:00 / 0:00</span><button class="dl" title="Видео файл болгон татах">⬇ Татах</button><button class="fs" title="Томруулах">⛶</button></div>`;
+  const cv=el.querySelector('canvas'),ctx=cv.getContext('2d'),pp=el.querySelector('.pp'),bar=el.querySelector('.vprog i'),tm=el.querySelector('.vtime'),dl=el.querySelector('.dl');
+  const total=scenes.reduce((a,s)=>a+s.d,0),starts=[];scenes.reduce((a,s)=>(starts.push(a),a+s.d),0);
+  const fmt=s=>Math.floor(s/60)+':'+String(Math.floor(s%60)).padStart(2,'0');
+  let t=0,playing=false,last=0,rec=null;
+  function render(){let i=scenes.length-1;for(let j=0;j<scenes.length;j++){if(t<starts[j]+scenes[j].d){i=j;break}}
+    const sc=scenes[i],lt=Math.min(sc.d,t-starts[i]),k=lt/sc.d;ctx.save();sc.draw(ctx,k,t,lt);ctx.restore();
+    vCaption(ctx,typeof sc.cap==='function'?sc.cap(k):sc.cap,Math.min(1,lt/.4));
+    const edge=Math.min(lt,sc.d-lt);if(edge<.3&&t>.05&&t<total-.05){ctx.fillStyle=`rgba(255,253,246,${(1-edge/.3)*.85})`;ctx.fillRect(0,0,VW,VH)}
+    bar.style.width=(t/total*100)+'%';tm.textContent=fmt(t)+' / '+fmt(total)}
+  function loop(ts){if(!playing)return;t+=Math.min(.1,(ts-last)/1000);last=ts;if(t>=total){t=total;render();pause();if(rec)rec.stop();return}render();requestAnimationFrame(loop)}
+  function play(){if(t>=total)t=0;playing=true;pp.textContent='⏸ Зогсоох';last=performance.now();requestAnimationFrame(loop)}
+  function pause(){playing=false;pp.textContent='▶ Тоглуулах'}
+  pp.onclick=()=>playing?pause():play();cv.onclick=()=>playing?pause():play();
+  el.querySelector('.rs').onclick=()=>{t=0;render();if(!playing)play()};
+  el.querySelector('.vprog').onclick=e=>{const r=e.currentTarget.getBoundingClientRect();t=(e.clientX-r.left)/r.width*total;render()};
+  el.querySelector('.fs').onclick=()=>{if(document.fullscreenElement)document.exitFullscreen();else el.requestFullscreen?.()};
+  if(!(cv.captureStream&&window.MediaRecorder))dl.style.display='none';
+  dl.onclick=()=>{if(rec)return;const mime=['video/webm;codecs=vp9','video/webm;codecs=vp8','video/webm'].find(m=>MediaRecorder.isTypeSupported(m));const chunks=[];
+    rec=new MediaRecorder(cv.captureStream(30),mime?{mimeType:mime,videoBitsPerSecond:6e6}:undefined);rec.ondataavailable=e=>e.data.size&&chunks.push(e.data);
+    rec.onstop=()=>{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob(chunks,{type:'video/webm'}));a.download=fileName;document.body.appendChild(a);a.click();a.remove();rec=null;dl.textContent='⬇ Татах'};
+    dl.textContent='⏺ Бичиж байна…';rec.start();t=0;play()};
+  const api={el,pause,render};videos.push(api);document.fonts?.ready.then(render);render();return api;
+}
+
+/* ---------- Video: Буцааж болох уу? ---------- */
+function rewindIcon(c,x,y,a){c.save();c.globalAlpha=a;c.fillStyle='#10a39b';c.beginPath();c.arc(x,y,46,0,7);c.fill();c.fillStyle='#fff';c.beginPath();c.moveTo(x-4,y-20);c.lineTo(x-28,y);c.lineTo(x-4,y+20);c.fill();c.beginPath();c.moveTo(x+22,y-20);c.lineTo(x-2,y);c.lineTo(x+22,y+20);c.fill();c.restore()}
+function noIcon(c,x,y,a){c.save();c.globalAlpha=a;c.strokeStyle='#e5484d';c.lineWidth=14;c.lineCap='round';c.beginPath();c.moveTo(x-40,y-40);c.lineTo(x+40,y+40);c.moveTo(x+40,y-40);c.lineTo(x-40,y+40);c.stroke();c.restore()}
+makeVideo($('vid1'),[
+  {d:6,cap:'Бидний эргэн тойронд өөрчлөлт байнга явагддаг!',draw(c,k,T){
+    paperBg(c,VW,VH);txt(c,'Өөрчлөлт',VW/2,200,110,'#4a5bd6','#fff','Pangolin');
+    ['🧊','🍫','📄','🥚'].forEach((e,i)=>emoji(c,e,VW/2+(i-1.5)*230,420+Math.sin(T*3+i)*14,110));
+  }},
+  {d:8,cap:k=>k<.55?'Мөс хайлж ус болов 💧':'Хөлдөөвөл дахин мөс болно ↺',draw(c,k,T){
+    paperBg(c,VW,VH);c.fillStyle='#e9dcc2';c.fillRect(0,560,VW,160);
+    const m=k<.55?clamp01(k/.5):clamp01(1-(k-.6)/.35),s=220*(1-m*.85);
+    c.fillStyle='rgba(79,141,255,.75)';c.beginPath();c.ellipse(VW/2,565,60+m*380,14+m*30,0,0,7);c.fill();
+    if(s>24)iceCube(c,VW/2,560-s/2,s);
+    if(k>=.55)rewindIcon(c,VW-160,150,clamp01((k-.55)*5));
+  }},
+  {d:8,cap:k=>k<.55?'Шоколад дулаанд хайлж урслаа 🍫':'Хөрөхөөрөө дахин хатуурна ↺',draw(c,k,T){
+    paperBg(c,VW,VH);
+    const m=k<.55?clamp01(k/.5):clamp01(1-(k-.6)/.35);
+    c.fillStyle='#6b3b1f';const bw=360,bh=170*(1-m*.75);c.beginPath();c.roundRect(VW/2-bw/2-m*120,420-bh,bw+m*240,bh+20,20);c.fill();
+    if(m<.4){c.strokeStyle='#8a5130';c.lineWidth=6;for(let i=1;i<4;i++){c.beginPath();c.moveTo(VW/2-bw/2+i*bw/4,420-bh+10);c.lineTo(VW/2-bw/2+i*bw/4,430);c.stroke()}}
+    if(k<.55)emoji(c,'☀️',180,140,110);else emoji(c,'❄️',180,140,110);
+    if(k>=.55)rewindIcon(c,VW-160,150,clamp01((k-.55)*5));
+  }},
+  {d:8,cap:k=>k<.6?'Цаас шатаж үнс болов… 🔥':'Үнсийг буцааж цаас болгож чадах уу? ❌',draw(c,k,T){
+    paperBg(c,VW,VH);const b=clamp01(k/.55);
+    c.fillStyle='#fff';c.strokeStyle='#c8c2b0';c.lineWidth=3;const w=300*(1-b*.8),h=380*(1-b*.85);
+    if(b<.98){c.beginPath();c.rect(VW/2-w/2,560-h,w,h);c.fill();c.stroke();c.fillStyle='#3a2a1a';c.beginPath();c.rect(VW/2-w/2,560-h,w,h*b*.4+4);c.fill()}
+    c.fillStyle='#4a4a4a';c.beginPath();c.ellipse(VW/2,565,30+b*130,8+b*22,0,0,7);c.fill();
+    if(b<.98){flame(c,VW/2-50,560-h+10,1.6*(1-b*.5),T);flame(c,VW/2+40,560-h+20,1.2*(1-b*.5),T+1)}else smoke(c,VW/2,540,T,1);
+    if(k>=.6){rewindIcon(c,VW-160,150,.5);noIcon(c,VW-160,150,clamp01((k-.6)*5))}
+  }},
+  {d:8,cap:k=>k<.55?'Өндгийг хайруулын тавган дээр шарав 🍳':'Түүхий өндөг болгож чадах уу? ❌',draw(c,k,T){
+    paperBg(c,VW,VH);c.fillStyle='#3d4250';c.beginPath();c.ellipse(VW/2,430,300,110,0,0,7);c.fill();c.fillRect(VW/2+280,410,300,34);
+    const f=clamp01(k/.5);c.fillStyle=`rgba(255,255,255,${.35+f*.65})`;c.beginPath();c.ellipse(VW/2,420,170,80,0,0,7);c.fill();
+    c.fillStyle=`rgb(255,${190-f*20},${40})`;c.beginPath();c.arc(VW/2,410,48,0,7);c.fill();
+    for(let i=0;i<5;i++){const fx=VW/2-200+i*100;flame(c,fx,560,.8,T+i)}
+    if(k>=.55){rewindIcon(c,VW-160,150,.5);noIcon(c,VW-160,150,clamp01((k-.55)*5))}
+  }},
+  {d:5,cap:'Аль нь буцаж болох, аль нь болохгүй вэ? Судалцгаая! 🔬',draw(c,k,T){
+    paperBg(c,VW,VH);
+    c.fillStyle='#daf4f1';c.beginPath();c.roundRect(120,120,480,380,24);c.fill();c.fillStyle='#ffe8da';c.beginPath();c.roundRect(680,120,480,380,24);c.fill();
+    txt(c,'↺ Эргэх',360,180,56,'#0b7c76','#fff','Pangolin');txt(c,'Үл эргэх →',920,180,56,'#d24c12','#fff','Pangolin');
+    emoji(c,'🧊',290,330,100);emoji(c,'🍫',430,330,100);emoji(c,'📄',850,330,100);emoji(c,'🍳',990,330,100);
+  }},
+],'Butsaaj_bolokh_uu.webm');
+
+/* ================= Filtration ================= */
+const fc=$('filt'),fx=fc.getContext('2d');
+let F;function fInit(){F={step:0,fold:0,place:0,pour:0,drips:[],grains:Array.from({length:70},()=>({x:rnd(-60,60),y:rnd(-10,70),p:rnd(0,6)})),frame:0};
+  $('f1').disabled=false;$('f2').disabled=true;$('f3').disabled=true;$('fStatus').textContent='🥤 Элс, усны холимог';$('fText').innerHTML='Ану: “Би элсийг уснаас ялгахын тулд <b>шүүнэ</b>. Надад юу хэрэгтэй вэ?”'}
+fInit();
+$('f1').onclick=()=>{F.step=1;$('f1').disabled=true;$('fStatus').textContent='📄 Шүүгч цаас нугалж байна';$('fText').innerHTML='Дугуй цаасыг <b>хагасаар</b>, дахиад <b>хагасаар</b> нугалаад, нэг талаас нь задалж <b>юүлүүр</b> хэлбэртэй болгоно.'};
+$('f2').onclick=()=>{F.step=2;$('f2').disabled=true;$('fStatus').textContent='🔻 Юүлүүрт тавьж байна';$('fText').innerHTML='Шүүгч цаасыг <b>усаар норгож</b>, юүлүүрт наалдуулна. Юүлүүрийг <b>хөдөлгөөнгүй</b> бэхэлнэ.'};
+$('f3').onclick=()=>{F.step=3;$('f3').disabled=true;$('fStatus').textContent='🥢 Савхаар асгаж байна';$('fText').innerHTML='Шилэн савхыг <b>45°</b> өнцгөөр барьж, холимгийг савхыг дагуулан аажмаар асгана.'};
+$('f0').onclick=fInit;
+document.querySelectorAll('[data-fq]').forEach(b=>b.onclick=()=>{const f=$('fqFb');if(b.dataset.fq==='wood'){f.className='feedback ok';f.textContent='✅ Тийм! Модны үртэс усанд уусдаггүй тул шүүгч цаасан дээр үлдэнэ.'}else{f.className='feedback no';f.textContent='❌ Үгүй! Давс усанд уусдаг тул шүүгч цаасаар устайгаа хамт нэвтэрнэ.'}});
+const FX=600,FT=250; // funnel center x, funnel top y
+function fStep(){const S=F;S.frame++;
+  if(S.step===1){S.fold=Math.min(1,S.fold+.006);if(S.fold>=1&&$('f2').disabled&&S.place===0){$('f2').disabled=false;$('fStatus').textContent='✅ Шүүгч цаас бэлэн!'}}
+  if(S.step===2){S.place=Math.min(1,S.place+.02);if(S.place>=1&&$('f3').disabled&&S.pour===0)$('f3').disabled=false}
+  if(S.step===3){S.pour=Math.min(1,S.pour+.0035);if(S.frame%7===0&&S.pour<1.0)S.drips.push({y:FT+150,v:1});
+    if(S.pour>=1&&S.step===3){S.step=4;$('fStatus').innerHTML='🎉 <span class="r-c">Ялгалаа!</span>';$('fText').innerHTML='Элс шүүгч цаасан дээр <b>үлдэж</b>, цэвэр ус колбонд гоожлоо. Элс, ус хоёул хэвээрээ — энэ бол <b class="r-c">эргэх өөрчлөлт</b>.';confetti(80)}}
+  if(S.step===4&&S.frame%14===0&&S.drips.length<3)S.drips.push({y:FT+150,v:1});
+  S.drips.forEach(d=>{d.v+=.3;d.y+=d.v;if(d.y>470)d.done=true});S.drips=S.drips.filter(d=>!d.done);
+}
+function fDraw(){const S=F,c=fx;paperBg(c,900,600);
+  c.fillStyle='#e9dcc2';c.fillRect(0,560,900,40);
+  // fold panel
+  const shapes=['⚪','◓','◔','🔻'];c.fillStyle='#fff';c.strokeStyle='#e3d9c0';c.lineWidth=2;c.beginPath();c.roundRect(20,20,290,86,14);c.fill();c.stroke();
+  for(let i=0;i<4;i++){const on=S.step>=1&&S.fold*4>=i;c.globalAlpha=on?1:.3;
+    const x=58+i*68,y=63;c.fillStyle='#fff';c.strokeStyle='#4a5bd6';c.lineWidth=3;c.beginPath();
+    if(i===0)c.arc(x,y,24,0,7);else if(i===1){c.arc(x,y+10,26,Math.PI,0);c.closePath()}else if(i===2){c.moveTo(x-12,y+16);c.arc(x-12,y+16,34,-Math.PI/2,0);c.closePath()}else{c.moveTo(x-22,y-20);c.lineTo(x+22,y-20);c.lineTo(x,y+24);c.closePath()}
+    c.fill();c.stroke();c.globalAlpha=1;if(i<3){c.fillStyle='#aaa';c.font='700 18px sans-serif';c.fillText('›',x+30,y+6)}}
+  // stand
+  c.fillStyle='#8a5a33';c.fillRect(760,180,14,380);c.fillRect(700,550,150,12);c.fillRect(FX+60,FT+40,170,10);
+  // flask
+  const fy=420;c.save();c.beginPath();c.moveTo(FX-22,fy);c.lineTo(FX-22,fy+30);c.lineTo(FX-90,555);c.lineTo(FX+90,555);c.lineTo(FX+22,fy+30);c.lineTo(FX+22,fy);c.closePath();
+  c.fillStyle='rgba(230,245,255,.5)';c.fill();c.clip();const wl=Math.min(S.pour,1)*70;c.fillStyle='rgba(120,190,255,.7)';c.fillRect(FX-100,555-wl,200,wl);c.restore();
+  c.strokeStyle='#8fbbe0';c.lineWidth=4;c.beginPath();c.moveTo(FX-22,fy);c.lineTo(FX-22,fy+30);c.lineTo(FX-90,555);c.lineTo(FX+90,555);c.lineTo(FX+22,fy+30);c.lineTo(FX+22,fy);c.stroke();
+  // funnel
+  c.fillStyle='rgba(230,245,255,.6)';c.strokeStyle='#8fbbe0';c.lineWidth=4;c.beginPath();c.moveTo(FX-110,FT);c.lineTo(FX+110,FT);c.lineTo(FX+12,FT+110);c.lineTo(FX+12,FT+170);c.lineTo(FX-12,FT+170);c.lineTo(FX-12,FT+110);c.closePath();c.fill();c.stroke();
+  // paper cone
+  if(S.place>0){c.globalAlpha=S.place;const dy=(1-S.place)*-120;c.fillStyle='#fff';c.strokeStyle='#d8d2c0';c.lineWidth=2;c.beginPath();c.moveTo(FX-96,FT+6+dy);c.lineTo(FX+96,FT+6+dy);c.lineTo(FX,FT+104+dy);c.closePath();c.fill();c.stroke();c.globalAlpha=1;
+    // sand on paper
+    const sp=Math.min(S.pour,1);if(sp>0){c.fillStyle='#c9a46a';c.beginPath();const h=sp*48;c.moveTo(FX-h*.98,FT+104-h);c.lineTo(FX+h*.98,FT+104-h);c.lineTo(FX,FT+104);c.closePath();c.fill();
+      for(let i=0;i<14*sp;i++){c.fillStyle='#a37b45';c.fillRect(FX-h*.6+((i*37)%(h*1.2+1)),FT+104-h*.7+((i*13)%(h*.6+1)),3,3)}}}
+  // drips
+  S.drips.forEach(d=>{c.fillStyle='#6fb0ff';c.beginPath();c.arc(FX,d.y,5,0,7);c.fill()});
+  // beaker with mixture (tilted while pouring)
+  const tilt=S.step>=3?-.75*clamp01((S.pour)*6):0;const bx=S.step>=3?FX-170:200,by=S.step>=3?FT-5:420;
+  c.save();c.translate(bx,by);c.rotate(tilt);
+  const BW2=150,BH2=170,left=-BW2/2;c.fillStyle='rgba(230,245,255,.5)';c.fillRect(left,-BH2,BW2,BH2);
+  const lvl=(1-Math.min(S.pour,1))*130;if(lvl>2){c.fillStyle='rgba(160,120,70,.55)';c.fillRect(left+4,-lvl,BW2-8,lvl-4);
+    F.grains.forEach((g,i)=>{if(i/F.grains.length<1-Math.min(S.pour,1)){c.fillStyle='#a37b45';c.fillRect(g.x*.95,-8-((g.y+Math.sin(S.frame/20+g.p)*6)%Math.max(4,lvl-12)),4,4)}})}
+  c.strokeStyle='#8fbbe0';c.lineWidth=5;c.beginPath();c.moveTo(left,-BH2);c.lineTo(left,0);c.lineTo(-left,0);c.lineTo(-left,-BH2);c.lineTo(-left+14,-BH2-10);c.stroke();c.restore();
+  // glass rod + stream
+  if(S.step>=3){c.strokeStyle='#b8d8ee';c.lineWidth=7;c.lineCap='round';c.beginPath();c.moveTo(FX-120,FT-110);c.lineTo(FX-20,FT+10);c.stroke();
+    txt(c,'45°',FX-110,FT-30,24,'#4a5bd6');
+    if(S.pour<1){c.strokeStyle='rgba(160,120,70,.75)';c.lineWidth=5;c.beginPath();c.moveTo(FX-110,FT-100);c.lineTo(FX-25,FT+5);c.stroke()}}
+  // labels
+  c.font='700 20px "Golos Text",sans-serif';c.fillStyle='#646378';c.textAlign='center';
+  c.fillText('Юүлүүр',FX-180+ (S.step>=3?330:0),FT+80);c.fillText('Колбо',FX,590);
+  if(S.step<3)c.fillText('Элс + ус',200,450);
+  c.textAlign='left';
+}
+
+/* ================= Magnet ================= */
+const mc=$('mag'),mx2=mc.getContext('2d');
+const GL={x1:300,x2:560,top:170,bot:520};
+let M;function mInit(){M={mode:M?M.mode:'out',mx:180,my:330,drag:false,water:1,pouring:false,filings:Array.from({length:70},()=>({x:rnd(GL.x1+16,GL.x2-16),y:rnd(GL.bot-22,GL.bot-6),stuck:false,ox:0,oy:0,a:rnd(0,3.14),where:'glass'})),dish:0,lost:0,done:false};mUI()}
+function mUI(){const t={filter:['🧒 Тэмүжин шүүх аргыг сонголоо','Шүүх аргаар ч ялгаж болно — үртэс шүүгч цаасан дээр үлдэнэ. Гэхдээ цаас, юүлүүр хэрэгтэй, удаан. Соронзоор туршаад харьцуулаарай!'],
+  out:['👧 Ану: соронзоо шилний гаднаас','Соронзыг шилний <b>гадна талд</b> ойртуулж, үртсийг нэг хананд цуглуул. Дараа нь “Усыг асгах” товчийг дар.'],
+  in:['👦 Болор: соронзоо сав руу хийнэ','Соронзыг <b>усанд</b> хийж үртсийг наалдуулаад, баруун талын <b>тавган</b> дээр аваачаарай.']}[M.mode];
+  $('mStatus').innerHTML=t[0];$('mText').innerHTML=t[1];document.querySelectorAll('.kid').forEach(k=>k.classList.toggle('on',k.dataset.m===M.mode));$('mPour').disabled=M.mode!=='out'}
+document.querySelectorAll('.kid').forEach(k=>k.onclick=()=>{M.mode=k.dataset.m;mInit()});
+$('mReset').onclick=mInit;
+const tip=()=>({x:M.mx,y:M.my+46});
+function mPos(e){const r=mc.getBoundingClientRect(),s=Math.min(r.width/900,r.height/600),ox=(r.width-900*s)/2,oy=(r.height-600*s)/2;return{x:(e.clientX-r.left-ox)/s,y:(e.clientY-r.top-oy)/s}}
+mc.addEventListener('pointerdown',e=>{const p=mPos(e);if(Math.hypot(p.x-M.mx,p.y-(M.my+10))<80){M.drag=true;mc.setPointerCapture(e.pointerId)}});
+mc.addEventListener('pointermove',e=>{if(!M.drag)return;const p=mPos(e);M.mx=Math.max(40,Math.min(860,p.x));M.my=Math.max(40,Math.min(520,p.y-10));
+  if(M.mode==='out'&&M.mx>GL.x1-40&&M.mx<GL.x2+40&&M.my+46>GL.top)M.my=Math.min(M.my,GL.top-60)});
+mc.addEventListener('pointerup',()=>M.drag=false);mc.addEventListener('pointercancel',()=>M.drag=false);
+$('mPour').onclick=()=>{if(M.water>0&&!M.pouring)M.pouring=true};
+function mStep(){const S=M,T=tip();const wl=GL.bot-(GL.bot-GL.top-50)*S.water;
+  if(S.pouring){S.water=Math.max(0,S.water-.012);if(S.water<=0&&!S.done){S.pouring=false;S.done=true;const st=S.filings.filter(f=>f.stuck&&f.where==='glass').length,lost=S.filings.filter(f=>f.where==='lost').length;
+      $('mStatus').innerHTML=lost<=5?'🎉 <span class="r-c">Ус, үртэс ялгарлаа!</span>':'🤔 Зарим үртэс устай хамт урсчихлаа';$('mText').innerHTML=`Соронзонд баригдсан үртэс: <b>${st}</b>, устай урссан: <b>${lost}</b>. Үртэс, ус хоёул хэвээрээ — <b class="r-c">эргэх өөрчлөлт</b>.`;if(lost<=5)confetti(90)}}
+  const inWater=T.x>GL.x1&&T.x<GL.x2&&T.y>wl&&T.y<GL.bot;
+  const outside=(T.x<GL.x1||T.x>GL.x2);
+  const wallX=T.x<GL.x1?GL.x1+8:GL.x2-8;
+  for(const f of S.filings){if(f.where!=='glass'&&f.where!=='magnet'){continue}
+    let tx=null,ty=null;
+    if(S.mode==='in'&&(f.where==='magnet'||Math.hypot(f.x-T.x,f.y-T.y)<120)&&(inWater||f.where==='magnet')){tx=T.x;ty=T.y}
+    if(S.mode==='out'&&outside&&Math.abs(T.x-(T.x<GL.x1?GL.x1:GL.x2))<130&&T.y>GL.top&&T.y<GL.bot+40){tx=wallX;ty=Math.max(wl+10,Math.min(GL.bot-8,T.y))}
+    if(f.where==='magnet'){f.x=T.x+f.ox;f.y=T.y+f.oy;
+      if(T.x>650&&T.x<850&&T.y>430){f.where='dish';f.x=rnd(680,820);f.y=rnd(470,500);S.dish++;if(S.dish===S.filings.length||S.filings.every(q=>q.where!=='glass'&&q.where!=='magnet')){$('mStatus').innerHTML='🎉 <span class="r-c">Бүх үртсийг ялгалаа!</span>';$('mText').innerHTML='Соронзонд наалдсан үртсийг цэвэрлэхэд хэцүү — соронзоо <b>гялгар уутанд</b> хийвэл амар. Энэ бол <b class="r-c">эргэх өөрчлөлт</b>.';confetti(90)}}
+      continue}
+    if(tx!==null){const d=Math.hypot(tx-f.x,ty-f.y)||1,sp=Math.min(d,2+260/d);f.x+=(tx-f.x)/d*sp+rnd(-1,1);f.y+=(ty-f.y)/d*sp+rnd(-1,1);
+      if(d<14){f.stuck=true;if(S.mode==='in'){f.where='magnet';f.ox=rnd(-14,14);f.oy=rnd(-4,10)}}}
+    else{f.stuck=false;if(f.y<GL.bot-6)f.y+=2.5}
+    if(S.pouring&&!f.stuck&&f.where==='glass'&&f.y<GL.bot&&S.water<.6){f.where='lost';f.x=rnd(60,200);f.y=rnd(540,555)}
+    f.x=Math.max(GL.x1+6,Math.min(GL.x2-6,f.x));if(f.y>GL.bot-5)f.y=GL.bot-5;
+  }
+}
+function magnetDraw(c,x,y){c.save();c.translate(x,y);c.lineWidth=26;c.lineCap='butt';c.strokeStyle='#e5484d';c.beginPath();c.arc(0,0,30,Math.PI,0,false);c.stroke();
+  c.fillStyle='#e5484d';c.fillRect(-43,0,26,30);c.fillRect(17,0,26,30);c.fillStyle='#cfd5dd';c.fillRect(-43,30,26,16);c.fillRect(17,30,26,16);c.restore()}
+function mDraw(){const S=M,c=mx2;paperBg(c,900,600);c.fillStyle='#e9dcc2';c.fillRect(0,520,900,80);
+  const wl=GL.bot-(GL.bot-GL.top-50)*S.water;
+  // water
+  c.fillStyle='rgba(120,190,255,.45)';c.fillRect(GL.x1+4,wl,GL.x2-GL.x1-8,GL.bot-wl);
+  // dish
+  c.fillStyle='#fff';c.strokeStyle='#c8c2b0';c.lineWidth=3;c.beginPath();c.ellipse(750,490,95,26,0,0,7);c.fill();c.stroke();
+  c.font='700 18px "Golos Text",sans-serif';c.fillStyle='#646378';c.textAlign='center';c.fillText('Таваг',750,540);
+  if(S.mode==='out'){c.fillText('Угаалтуур',130,580)}
+  // filings
+  S.filings.forEach(f=>{if(f.where==='lost'&&S.mode!=='out')return;c.save();c.translate(f.x,f.y);c.rotate(f.a+(f.stuck?Math.atan2(tip().y-f.y,tip().x-f.x):0));c.fillStyle='#4b4f58';c.fillRect(-5,-1.5,10,3);c.restore()});
+  // glass
+  c.strokeStyle='#8fbbe0';c.lineWidth=6;c.beginPath();c.moveTo(GL.x1,GL.top);c.lineTo(GL.x1,GL.bot);c.lineTo(GL.x2,GL.bot);c.lineTo(GL.x2,GL.top);c.stroke();
+  c.fillStyle='rgba(255,255,255,.35)';c.fillRect(GL.x1+10,GL.top+10,10,GL.bot-GL.top-30);
+  // pouring stream
+  if(S.pouring){c.strokeStyle='rgba(120,190,255,.8)';c.lineWidth=12;c.beginPath();c.moveTo(GL.x1,GL.top+10);c.quadraticCurveTo(GL.x1-80,GL.top+40,130,560);c.stroke()}
+  // filter mode illustration
+  if(S.mode==='filter'){c.globalAlpha=.9;emoji(c,'🔻',730,250,90);c.globalAlpha=1;c.fillText('Шүүгч цаас + юүлүүр',730,320)}
+  magnetDraw(c,S.mx,S.my);
+  if(!S.drag&&S.dish===0&&!S.done){c.fillStyle='#4a5bd6';c.font='700 18px "Golos Text",sans-serif';c.fillText('👆 чир',S.mx,S.my-50)}
+  c.textAlign='left';
+}
+mInit();
+
+/* ================= Rewind game ================= */
+const RW=[
+  {b:'🧊',a:'💧',t:'Мөс хайлах',r:true,x:'Усыг хөлдөөвөл дахин мөс болно.'},
+  {b:'💧',a:'🧊',t:'Ус хөлдөх',r:true,x:'Мөсийг халаавал дахин ус болно.'},
+  {b:'🍫',a:'🟫',t:'Шоколад хайлах',r:true,x:'Хөргөхөд шоколад дахин хатуурна.'},
+  {b:'🏖️',a:'🥤',t:'Элсийг устай холих',r:true,x:'Шүүх аргаар элсийг уснаас ялгаж болно.'},
+  {b:'🔩',a:'🧲',t:'Төмрийн үртсийг устай холих',r:true,x:'Соронзоор үртсийг ялгаж авч болно.'},
+  {b:'💧',a:'♨️',t:'Ус уурших',r:true,x:'Уурыг хөргөхөд дахин ус болно (конденсаци).'},
+  {b:'📄',a:'⚫',t:'Цаас шатах',r:false,x:'Үнсийг дахин цаас болгож чадахгүй.'},
+  {b:'🥚',a:'🍳',t:'Өндөг шарах',r:false,x:'Шарсан өндгийг түүхий болгож чадахгүй.'},
+  {b:'🌾',a:'🍞',t:'Гурилаар талх жигнэх',r:false,x:'Талхыг буцааж гурил болгож чадахгүй.'},
+  {b:'🪵',a:'🔥',t:'Мод шатах',r:false,x:'Шатсан модыг буцааж чадахгүй.'},
+  {b:'🥛',a:'🥣',t:'Сүү исэж тараг болох',r:false,x:'Тарагийг дахин сүү болгож чадахгүй.'},
+  {b:'🔨',a:'🟤',t:'Төмөр зэврэх',r:false,x:'Зэвийг дахин гялалзсан төмөр болгож чадахгүй.'},
+];
+let rwOrd=[],ri=0,rwScore=0,rwDone=false;
+function rwNew(){
+  if(!rwOrd.length||ri>=rwOrd.length){rwOrd=shuffle(RW).slice(0,10);ri=0;rwScore=0;$('rwScore').textContent=0;$('colR').innerHTML='';$('colI').innerHTML=''}
+  rwDone=false;const it=rwOrd[ri];$('rwTitle').textContent=it.t;$('rwBefore').textContent=it.b;$('rwAfter').textContent=it.a;$('rwTot').textContent=rwOrd.length;
+  $('rwStamp').classList.remove('show');$('rwStage').classList.remove('rewind');$('rwFb').textContent='';document.querySelectorAll('[data-rw]').forEach(b=>b.disabled=false);
+}
+document.querySelectorAll('[data-rw]').forEach(b=>b.onclick=()=>{
+  if(rwDone)return;const it=rwOrd[ri],ans=b.dataset.rw==='r',f=$('rwFb');
+  if(ans===it.r){rwDone=true;rwScore++;$('rwScore').textContent=rwScore;f.className='feedback ok';f.textContent='🎉 Зөв! '+it.x;confetti(40);
+    if(it.r){const st=$('rwStage');st.classList.remove('rewind');void st.offsetWidth;st.classList.add('rewind');setTimeout(()=>{$('rwAfter').textContent=it.b},450)}
+    else $('rwStamp').classList.add('show');
+    const chip=document.createElement('span');chip.className='it';chip.textContent=it.b+' '+it.t;$(it.r?'colR':'colI').appendChild(chip);
+    document.querySelectorAll('[data-rw]').forEach(x=>x.disabled=true)}
+  else{f.className='feedback no';f.textContent='🤔 Дахин бодоорой: анхны байдалдаа буцаж чадах уу?';b.classList.add('shake');setTimeout(()=>b.classList.remove('shake'),450)}
+});
+$('rwNext').onclick=()=>{ri++;rwNew()};rwNew();
+
+/* ================= Candle ================= */
+const cc2=$('cand'),cx3=cc2.getContext('2d');
+let C={O2:21,lit:true,jar:0,jarTarget:0,frame:0,drops:0,soot:0,water:0};
+$('cCover').onclick=()=>{C.jarTarget=1};$('cLift').onclick=()=>{C.jarTarget=0};$('cLight').onclick=()=>{if(C.jarTarget===0||C.O2>17){C.lit=true}};
+function cStep2(){const S=C;S.frame++;S.jar+=(S.jarTarget-S.jar)*.06;const covered=S.jar>.97;
+  if(covered){if(S.lit){S.O2=Math.max(15,S.O2-.012);S.drops=Math.min(1,S.drops+.003);S.soot=Math.min(1,S.soot+.002);S.water=Math.min(1,S.water+.0025)}if(S.O2<=15.6)S.lit=false}
+  else{S.O2=Math.min(21,S.O2+.05);if(S.jar<.3){S.drops=Math.max(0,S.drops-.01);S.water=Math.max(0,S.water-.01)}}
+}
+function cDraw(){const S=C,c=cx3,T=S.frame/60;paperBg(c,900,600);c.fillStyle='#e9dcc2';c.fillRect(0,540,900,60);
+  const cx=380;
+  // plate + water
+  c.fillStyle='#fff';c.strokeStyle='#c8c2b0';c.lineWidth=3;c.beginPath();c.ellipse(cx,520,230,34,0,0,7);c.fill();c.stroke();
+  c.fillStyle='rgba(120,190,255,.6)';c.beginPath();c.ellipse(cx,516,200,22,0,0,7);c.fill();
+  // candle
+  c.fillStyle='#fff3e0';c.strokeStyle='#e8d3b0';c.lineWidth=3;c.beginPath();c.roundRect(cx-34,340,68,175,8);c.fill();c.stroke();
+  c.strokeStyle='#3a2a1a';c.lineWidth=4;c.beginPath();c.moveTo(cx,340);c.lineTo(cx,322);c.stroke();
+  const fs=S.lit?clamp01((S.O2-15.5)/4):0;flame(c,cx,326,fs*1.1+ (S.lit?.15:0),T);
+  if(!S.lit)smoke(c,cx,318,T,1);
+  // jar
+  const jy=-420*(1-S.jar);const JX1=cx-120,JX2=cx+120,JT=150+jy,JB=515+jy;
+  if(S.jar>.02){
+    if(S.water>0&&S.jar>.97){c.fillStyle='rgba(80,160,255,.55)';c.fillRect(JX1+4,JB-14-S.water*24,JX2-JX1-8,S.water*24+10)}
+    c.fillStyle='rgba(220,240,255,.28)';c.beginPath();c.roundRect(JX1,JT,JX2-JX1,JB-JT,[30,30,4,4]);c.fill();
+    c.strokeStyle='#8fbbe0';c.lineWidth=5;c.stroke();
+    if(S.soot>0){c.fillStyle=`rgba(40,40,40,${S.soot*.35})`;c.beginPath();c.ellipse(cx,JT+30,80,26,0,0,7);c.fill()}
+    for(let i=0;i<Math.floor(S.drops*24);i++){const dx=JX1+14+((i*53)%(JX2-JX1-28)),dy=JT+60+((i*97)%220);c.fillStyle='rgba(120,180,255,.85)';c.beginPath();c.arc(dx,dy,4,0,7);c.fill()}
+  }
+  // meter
+  c.font='700 20px "Golos Text",sans-serif';c.fillStyle='#2b2a3a';c.textAlign='left';c.fillText('💨 Хүчилтөрөгч (шилэн дотор)',585,90);
+  c.fillStyle='#ece3cd';c.beginPath();c.roundRect(585,105,240,22,11);c.fill();const fr=(S.O2-14)/7;c.fillStyle=S.O2>17?'#10a39b':'#ff6a2b';c.beginPath();c.roundRect(585,105,240*clamp01(fr),22,11);c.fill();
+  c.fillStyle='#2b2a3a';c.fillText(S.O2>=20.9?'Хангалттай':S.O2>16?'Багасаж байна…':'Дууссан!',585,152);
+  c.font='700 22px "Pangolin",sans-serif';c.fillStyle=S.lit?'#d24c12':'#646378';c.fillText(S.lit?'🔥 Лаа асч байна':'💨 Лаа унтарлаа',585,200);
+  if(S.drops>.3){c.fillStyle='#4a5bd6';c.font='700 18px "Golos Text",sans-serif';c.fillText('💧 Шилний ханан дээр усан дусал',585,240)}
+  if(S.soot>.3){c.fillStyle='#2b2a3a';c.fillText('⚫ Хөө тогтлоо',585,270)}
+  if(S.water>.3){c.fillStyle='#4a5bd6';c.fillText('⬆️ Шилэн доторх ус дээшиллээ',585,300)}
+}
+const TRI={fuel:'🕯️ <b>Түлш</b> — шатах зүйл (лаа, мод, цаас). Түлш дуусвал гал унтарна.',oxy:'💨 <b>Хүчилтөрөгч</b> — агаарт байдаг. Шилээр таглахад хүчилтөрөгч дуусаж лаа унтарсан!',heat:'🌡️ <b>Дулаан</b> — шүдэнз, оч. Усаар хөргөхөд гал унтарна.'};
+document.querySelectorAll('.tri .side').forEach(g=>g.onclick=()=>{$('triText').innerHTML=TRI[g.dataset.t]+' Гурвын аль нэгийг нь авбал <b class="i-c">гал унтарна</b>.'});
+
+/* ================= Fire safety ================= */
+const SAFE=[
+  {e:'🔥',t:'Шүдэнз, асаагуураар тоглох',ok:false,x:'Буруу! Шүдэнзээр тоглох нь түймрийн шалтгаан болно.'},
+  {e:'📞',t:'Гал гарвал 101 дугаарт залгах',ok:true,x:'Зөв! 101 — гал түймрийн алба.'},
+  {e:'🏕️',t:'Хээр түлсэн галаа унтраалгүй орхих',ok:false,x:'Буруу! Галаа усаар бүрэн унтраах ёстой.'},
+  {e:'🔌',t:'Ашиглаагүй цахилгаан хэрэгслийг залгуураас салгах',ok:true,x:'Зөв! Цахилгаанаас гал гарахаас сэргийлнэ.'},
+  {e:'🍾',t:'Ой, хээр шил, хог хаях',ok:false,x:'Буруу! Шил нарны гэрлийг цуглуулж гал гаргаж болно.'},
+  {e:'🧎',t:'Утаа ихтэй бол доогуур мөлхөж гарах',ok:true,x:'Зөв! Доод хэсэгт утаа бага байдаг.'},
+];
+(()=>{const g=$('safety');SAFE.forEach(s=>{const d=document.createElement('div');d.className='sc';d.innerHTML=`<div class="e">${s.e}</div><div class="t">${s.t}</div><div class="b"><button class="btn green">👍 Зөв</button><button class="btn irr">👎 Буруу</button></div><div class="ex"></div>`;
+  const [y,n]=d.querySelectorAll('button');const ans=v=>{const ok=v===s.ok;d.classList.remove('ok','no');d.classList.add(ok?'ok':'no');d.querySelector('.ex').textContent=(ok?'✅ ':'❌ Дахин бодоорой. ')+(ok?s.x:'');if(ok){y.disabled=n.disabled=true;confetti(25)}};
+  y.onclick=()=>ans(true);n.onclick=()=>ans(false);g.appendChild(d)})})();
+
+/* ================= Quiz ================= */
+const Q=[
+  {q:'Элсийг уснаас ямар аргаар ялгах вэ?',o:['Соронздох','Шүүх','Шатаах','Хөлдөөх'],a:1,e:'Шүүгч цаас, юүлүүр ашиглан шүүнэ.'},
+  {q:'Төмрийн үртсийг уснаас юугаар амархан ялгах вэ?',o:['Соронз','Халбага','Шүүр','Давс'],a:0,e:'Төмрийн үртэс соронзонд татагдана.'},
+  {q:'Аль нь эргэх өөрчлөлт вэ?',o:['Цаас шатах','Мөс хайлах','Өндөг шарах','Талх жигнэх'],a:1,e:'Ус хөлдөөвөл дахин мөс болно.'},
+  {q:'Аль нь үл эргэх өөрчлөлт вэ?',o:['Ус хөлдөх','Шоколад хайлах','Мод шатах','Элсийг устай холих'],a:2,e:'Шатсан модыг буцааж чадахгүй.'},
+  {q:'Асаалттай лааг шилээр таглахад юу болох вэ?',o:['Илүү хүчтэй шатна','Унтарна','Ус болно','Юу ч болохгүй'],a:1,e:'Хүчилтөрөгч дуусахаар лаа унтарна.'},
+  {q:'Шатахад зайлшгүй хэрэгтэй хий аль нь вэ?',o:['Хүчилтөрөгч','Усны уур','Утаа','Тоос'],a:0,e:'Шаталтад хүчилтөрөгч хэрэгтэй.'},
+  {q:'Давсыг уснаас шүүх аргаар ялгаж болох уу?',o:['Болно','Болохгүй — давс уусдаг','Зөвхөн хүйтэн усанд','Соронзоор болно'],a:1,e:'Уусдаг бодис шүүгчээр нэвтэрнэ.'},
+  {q:'Гал гарвал хэдэн дугаарт залгах вэ?',o:['101','102','103','105'],a:0,e:'101 — гал түймрийн алба.'},
+];
+let qi=0,qRes=[];const quiz=$('quiz');
+function renderQ(){
+  if(qi>=Q.length){const s=qRes.filter(Boolean).length,st=s>=7?3:s>=5?2:s>=3?1:0;
+    quiz.innerHTML=`<div class="card result tape"><div class="bigstars">${'⭐'.repeat(st)}${'☆'.repeat(3-st)}</div><h1 style="margin:10px 0" class="p-c">${s} / ${Q.length}</h1><p style="font-size:26px;font-weight:700">${st===3?'Гайхалтай! Та жинхэнэ эрдэмтэн боллоо! 🧑‍🔬':st===2?'Сайн байна! Бага зэрэг давтвал төгс! 👍':'Хамтдаа дахин давтъя! 💪'}</p><button class="btn" onclick="qi=0;qRes=[];renderQ()">↺ Дахин эхлэх</button></div>`;if(s>=5)confetti(160);return}
+  const it=Q[qi];
+  quiz.innerHTML=`<h2>❓ Шалгацгаая! <span style="font-size:22px" class="muted">${qi+1}/${Q.length}</span></h2>
+    <div class="qbar">${Q.map((_,i)=>`<i class="${i<qi?(qRes[i]?'ok':'no'):i===qi?'cur':''}"></i>`).join('')}</div>
+    <div class="quiz-q">${it.q}</div>
+    <div class="quiz-opts">${it.o.map((o,i)=>`<button class="qopt" data-i="${i}"><span class="k">${'АБВГ'[i]}</span>${o}</button>`).join('')}</div>
+    <div class="feedback" id="qFb"></div>
+    <div style="text-align:right"><button class="btn yel" id="qNext" style="visibility:hidden">Дараагийн асуулт ▶</button></div>`;
+  quiz.querySelectorAll('.qopt').forEach(b=>b.onclick=()=>{const i=+b.dataset.i,ok=i===it.a;qRes[qi]=ok;
+    quiz.querySelectorAll('.qopt').forEach(x=>{x.disabled=true;if(+x.dataset.i===it.a)x.classList.add('right')});
+    if(!ok)b.classList.add('wrong');else confetti(50);
+    const f=$('qFb');f.className='feedback '+(ok?'ok':'no');f.textContent=(ok?'🎉 Зөв! ':'❌ Буруу. ')+it.e;$('qNext').style.visibility='visible'});
+  $('qNext').onclick=()=>{qi++;renderQ()};
+}
+renderQ();
+
+/* ================= Lights ================= */
+const lcnt=JSON.parse(store.get('ch4-lights')||'{"g":0,"y":0,"r":0}');
+function drawL(){document.querySelectorAll('.light').forEach(b=>b.querySelector('.n').textContent=lcnt[b.dataset.l])}
+document.querySelectorAll('.light').forEach(b=>b.onclick=()=>{lcnt[b.dataset.l]++;store.set('ch4-lights',JSON.stringify(lcnt));drawL();b.classList.add('on');setTimeout(()=>b.classList.remove('on'),300)});
+$('lReset').onclick=()=>{lcnt.g=lcnt.y=lcnt.r=0;store.set('ch4-lights',JSON.stringify(lcnt));drawL()};drawL();
+
+/* ================= Confetti ================= */
+const cf=$('confetti'),cfx=cf.getContext('2d');let parts=[],cRun=false;
+function confetti(n){cf.width=innerWidth;cf.height=innerHeight;const cols=['#10a39b','#ff6a2b','#4a5bd6','#ffd23f','#22a565','#a05ad6'];
+  for(let i=0;i<n;i++)parts.push({x:innerWidth/2+rnd(-150,150),y:innerHeight*.45,vx:rnd(-7,7),vy:-rnd(4,18),s:rnd(6,12),c:cols[i%6],r:rnd(0,6),life:120});
+  if(!cRun){cRun=true;requestAnimationFrame(cStep)}}
+function cStep(){cfx.clearRect(0,0,cf.width,cf.height);parts.forEach(p=>{p.vy+=.4;p.x+=p.vx;p.y+=p.vy;p.r+=.2;p.life--;cfx.save();cfx.translate(p.x,p.y);cfx.rotate(p.r);cfx.fillStyle=p.c;cfx.fillRect(-p.s/2,-p.s/4,p.s,p.s/2);cfx.restore()});
+  parts=parts.filter(p=>p.life>0&&p.y<cf.height+20);if(parts.length)requestAnimationFrame(cStep);else{cRun=false;cfx.clearRect(0,0,cf.width,cf.height)}}
+
+/* ================= Main loop ================= */
+function frame(){
+  if(isActive(fc)){fStep();fDraw()}
+  if(isActive(mc)){mStep();mDraw()}
+  if(isActive(cc2)){cStep2();cDraw()}
+  requestAnimationFrame(frame);
+}
+go(0);fDraw();mDraw();cDraw();requestAnimationFrame(frame);
+</script>
+</body>
+</html>
